@@ -11,7 +11,7 @@ func LinearSearch[T any](slice []T, pred func(T) bool) (bool, int) {
 	return false, 0
 }
 
-func LinearSearchWithCtx[T any](ctx context.Context, slice []T, pred func(context.Context, T) bool) (bool, int) {
+func LinearSearchC[T any](ctx context.Context, slice []T, pred func(context.Context, T) bool) (bool, int) {
 	for idx, elem := range slice {
 		if pred(ctx, elem) {
 			return true, idx
@@ -20,7 +20,7 @@ func LinearSearchWithCtx[T any](ctx context.Context, slice []T, pred func(contex
 	return false, 0
 }
 
-func LinearSearchWithErr[T any](slice []T, pred func(T) (bool, error)) (bool, int) {
+func LinearSearchE[T any](slice []T, pred func(T) (bool, error)) (bool, int) {
 	for idx, elem := range slice {
 		if b, err := pred(elem); err != nil && b {
 			return true, idx
@@ -29,7 +29,7 @@ func LinearSearchWithErr[T any](slice []T, pred func(T) (bool, error)) (bool, in
 	return false, 0
 }
 
-func LinearSearchWithCtxErr[T any](ctx context.Context, slice []T, pred func(context.Context, T) (bool, error)) (bool, int) {
+func LinearSearchCE[T any](ctx context.Context, slice []T, pred func(context.Context, T) (bool, error)) (bool, int) {
 	for idx, elem := range slice {
 		if b, err := pred(ctx, elem); err != nil && b {
 			return true, idx
@@ -47,7 +47,7 @@ func LinearSearchPtr[T any](slice []T, pred func(*T) bool) (bool, int) {
 	return false, 0
 }
 
-func LinearSearchPtrWithCtx[T any](ctx context.Context, slice []T, pred func(context.Context, *T) bool) (bool, int) {
+func LinearSearchPtrC[T any](ctx context.Context, slice []T, pred func(context.Context, *T) bool) (bool, int) {
 	for idx, elem := range slice {
 		if pred(ctx, &elem) {
 			return true, idx
@@ -56,7 +56,7 @@ func LinearSearchPtrWithCtx[T any](ctx context.Context, slice []T, pred func(con
 	return false, 0
 }
 
-func LinearSearchPtrWithErr[T any](slice []T, pred func(*T) (bool, error)) (bool, int) {
+func LinearSearchPtrE[T any](slice []T, pred func(*T) (bool, error)) (bool, int) {
 	for idx, elem := range slice {
 		if b, err := pred(&elem); err != nil && b {
 			return true, idx
@@ -65,7 +65,7 @@ func LinearSearchPtrWithErr[T any](slice []T, pred func(*T) (bool, error)) (bool
 	return false, 0
 }
 
-func LinearSearchPtrWithCtxErr[T any](ctx context.Context, slice []T, pred func(context.Context, *T) (bool, error)) (bool, int) {
+func LinearSearchPtrCE[T any](ctx context.Context, slice []T, pred func(context.Context, *T) (bool, error)) (bool, int) {
 	for idx, elem := range slice {
 		if b, err := pred(ctx, &elem); err != nil && b {
 			return true, idx

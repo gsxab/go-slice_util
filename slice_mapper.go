@@ -1,6 +1,22 @@
 package slice_util
 
-import "context"
+import (
+	"context"
+)
+
+func ignoreError[T any, R any](mapper func(T) (R, error)) func(T) R {
+	return func(t T) R {
+		r, _ := mapper(t)
+		return r
+	}
+}
+
+func ignoreErrorC[T any, R any](mapper func(context.Context, T) (R, error)) func(context.Context, T) R {
+	return func(ctx context.Context, t T) R {
+		r, _ := mapper(ctx, t)
+		return r
+	}
+}
 
 func Map[T any, R any](slice []T, mapper func(T) R) []R {
 	ret := make([]R, 0, len(slice))
@@ -10,7 +26,7 @@ func Map[T any, R any](slice []T, mapper func(T) R) []R {
 	return ret
 }
 
-func MapWithCtx[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) R) []R {
+func MapC[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) R) []R {
 	ret := make([]R, 0, len(slice))
 	for _, t := range slice {
 		ret = append(ret, mapper(ctx, t))
@@ -18,27 +34,55 @@ func MapWithCtx[T any, R any](ctx context.Context, slice []T, mapper func(contex
 	return ret
 }
 
-func MapWithErr[T any, R any](slice []T, mapper func(T) (R, error)) []R {
+func MapE[T any, R any](slice []T, mapper func(T) (R, error)) ([]R, error) {
 	ret := make([]R, 0, len(slice))
 	for _, t := range slice {
-		if r, err := mapper(t); err != nil {
-			ret = append(ret, r)
+		r, err := mapper(t)
+		if err != nil {
+			return nil, err
 		}
+		ret = append(ret, r)
+	}
+	return ret, nil
+}
+
+func MapIgnoreE[T any, R any](slice []T, mapper func(T) (R, error)) []R {
+	return Map(slice, ignoreError(mapper))
+}
+
+func MapSkipE[T any, R any](slice []T, mapper func(T) (R, error)) []R {
+	return Map(slice, ignoreError(mapper))
+}
+
+func MapCE[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) (R, error)) ([]R, error) {
+	ret := make([]R, 0, len(slice))
+	for _, t := range slice {
+		r, err := mapper(ctx, t)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, r)
+	}
+	return ret, nil
+}
+
+func MapIgnoreCE[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) (R, error)) []R {
+	return MapC(ctx, slice, ignoreErrorC(mapper))
+}
+
+func MapSkipCE[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) (R, error)) []R {
+	ret := make([]R, 0, len(slice))
+	for _, t := range slice {
+		r, err := mapper(ctx, t)
+		if err != nil {
+			continue
+		}
+		ret = append(ret, r)
 	}
 	return ret
 }
 
-func MapWithCtxErr[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) (R, error)) []R {
-	ret := make([]R, 0, len(slice))
-	for _, t := range slice {
-		if r, err := mapper(ctx, t); err != nil {
-			ret = append(ret, r)
-		}
-	}
-	return ret
-}
-
-func FlatMap[T any, R any](slice []T, mapper func(T) []R) []R {
+func FlatMapSlice[T any, R any](slice []T, mapper func(T) []R) []R {
 	ret := make([]R, 0, len(slice))
 	for _, t := range slice {
 		ret = append(ret, mapper(t)...)
@@ -46,7 +90,7 @@ func FlatMap[T any, R any](slice []T, mapper func(T) []R) []R {
 	return ret
 }
 
-func FlatMapWithCtx[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) []R) []R {
+func FlatMapSliceC[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) []R) []R {
 	ret := make([]R, 0, len(slice))
 	for _, t := range slice {
 		ret = append(ret, mapper(ctx, t)...)
@@ -54,18 +98,66 @@ func FlatMapWithCtx[T any, R any](ctx context.Context, slice []T, mapper func(co
 	return ret
 }
 
-func FlatMapWithErr[T any, R any](slice []T, mapper func(T) ([]R, error)) []R {
+func FlatMapSliceE[T any, R any](slice []T, mapper func(T) ([]R, error)) ([]R, error) {
 	ret := make([]R, 0, len(slice))
 	for _, t := range slice {
-		ret = append(ret, mapper(t)...)
+		s, err := mapper(t)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, s...)
+	}
+	return ret, nil
+}
+
+func FlatMapSliceIgnoreE[T any, R any](slice []T, mapper func(T) ([]R, error)) []R {
+	return FlatMapSlice(slice, ignoreError(mapper))
+}
+
+func FlatMapSliceSkipE[T any, R any](slice []T, mapper func(T) ([]R, error)) []R {
+	ret := make([]R, 0, len(slice))
+	for _, t := range slice {
+		s, err := mapper(t)
+		if err != nil {
+			continue
+		}
+		ret = append(ret, s...)
 	}
 	return ret
 }
 
-func FlatMapWithCtx[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) []R) []R {
+func FlatMapSliceCE[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) ([]R, error)) ([]R, error) {
 	ret := make([]R, 0, len(slice))
 	for _, t := range slice {
-		ret = append(ret, mapper(ctx, t)...)
+		s, err := mapper(ctx, t)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, s...)
+	}
+	return ret, nil
+}
+
+func FlatMapSliceIgnoreCE[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) ([]R, error)) []R {
+	return FlatMapSliceC(ctx, slice, ignoreErrorC(mapper))
+}
+
+func FlatMapSliceSkipCE[T any, R any](ctx context.Context, slice []T, mapper func(context.Context, T) ([]R, error)) []R {
+	ret := make([]R, 0, len(slice))
+	for _, t := range slice {
+		s, err := mapper(ctx, t)
+		if err != nil {
+			continue
+		}
+		ret = append(ret, s...)
 	}
 	return ret
 }
+
+// func FlatMap[T any, R any](slice []T, mapper func(T) container.Iterable[R]) []R {
+// 	ret := make([]R, 0, len(slice))
+// 	for _, t := range slice {
+// 		ret = append(ret, mapper(t)...)
+// 	}
+// 	return ret
+// }
